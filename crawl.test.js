@@ -1,4 +1,3 @@
-const { log } = require('console');
 const {normalizeUrl, getURLsFromHTMl} = require('./crawl.js');
 const {test, expect} = require('@jest/globals')
 
