@@ -1,24 +1,47 @@
 const { log } = require('console');
 const {JSDOM} = require('jsdom');
 
-async function crawlPage(currentURl){
-    console.log("craling now");
+async function crawlPage(baseUrl, currentURl, pages){
+
+    const baseUrlObj = new URL(baseUrl)
+    const currentURlObj = new URL(currentURl)
+    if(baseUrlObj.hostname !== currentURlObj.hostname){
+        return pages
+    }
+
+    const normalizedCurrentURL = normalizeUrl(currentURl)
+    if (pages[normalizedCurrentURL] > 0){
+        pages[normalizedCurrentURL]++
+        return pages
+    }
+
+    pages[normalizedCurrentURL] = 1
+    console.log(`craling now ${currentURl}` );
+
     try{
         const resp = await fetch(currentURl)
         if (resp.status > 399) {
             console.log(`error in fetch with status code ${resp.status} on page ${currentURl}`);
-            return
+            return pages
         }
         const contentType = resp.headers.get("content-type")
         if (!contentType.includes("text/html")) {
             console.log(`Not html response, content: ${contentType} on page ${currentURl}`);
-            return
+            return pages
             
         }
-        console.log(await resp.text());
+        const htmlBody = await resp.text();
+
+        const nextUrls = getURLsFromHTMl(htmlBody, baseUrl)
+
+        for (const nextUrl of nextUrls) {
+            pages = await crawlPage(baseUrl, nextUrl, pages)
+        }
+        
     }catch (err){
         console.log(`error in fetch: ${err.message}, on page ${currentURl}`);
     }
+    return pages
 
 
 }
